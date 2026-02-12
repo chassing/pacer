@@ -39,7 +39,7 @@
     padding-bottom: 140px;
   }
 
-  /* Animated gradient background */
+  /* Gradient background */
   .bg-gradient {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -48,34 +48,6 @@
       radial-gradient(ellipse at 20% 20%, rgba(59, 130, 246, 0.12) 0%, transparent 50%),
       radial-gradient(ellipse at 80% 50%, rgba(245, 158, 11, 0.08) 0%, transparent 50%),
       radial-gradient(ellipse at 50% 90%, rgba(34, 197, 94, 0.10) 0%, transparent 50%);
-    animation: gradientShift 12s ease-in-out infinite alternate;
-  }
-
-  @keyframes gradientShift {
-    0% {
-      background:
-        radial-gradient(ellipse at 20% 20%, rgba(59, 130, 246, 0.12) 0%, transparent 50%),
-        radial-gradient(ellipse at 80% 50%, rgba(245, 158, 11, 0.08) 0%, transparent 50%),
-        radial-gradient(ellipse at 50% 90%, rgba(34, 197, 94, 0.10) 0%, transparent 50%);
-    }
-    33% {
-      background:
-        radial-gradient(ellipse at 40% 40%, rgba(59, 130, 246, 0.10) 0%, transparent 50%),
-        radial-gradient(ellipse at 60% 20%, rgba(245, 158, 11, 0.12) 0%, transparent 50%),
-        radial-gradient(ellipse at 30% 80%, rgba(34, 197, 94, 0.08) 0%, transparent 50%);
-    }
-    66% {
-      background:
-        radial-gradient(ellipse at 60% 30%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
-        radial-gradient(ellipse at 30% 60%, rgba(245, 158, 11, 0.10) 0%, transparent 50%),
-        radial-gradient(ellipse at 70% 80%, rgba(34, 197, 94, 0.12) 0%, transparent 50%);
-    }
-    100% {
-      background:
-        radial-gradient(ellipse at 50% 50%, rgba(59, 130, 246, 0.10) 0%, transparent 50%),
-        radial-gradient(ellipse at 20% 70%, rgba(245, 158, 11, 0.10) 0%, transparent 50%),
-        radial-gradient(ellipse at 80% 30%, rgba(34, 197, 94, 0.10) 0%, transparent 50%);
-    }
   }
 
   .container {
@@ -456,13 +428,13 @@ const DISCIPLINES = [
 
 let state = {
   distance: 'olympic',
-  modes: { swim: 'pace', bike: 'pace', run: 'pace' },
+  modes: { swim: 'duration', bike: 'duration', run: 'duration' },
   values: {
-    swim: { pace: '', durationH: '', durationM: '', durationS: '' },
+    swim: { paceM: '', paceS: '', durationH: '', durationM: '', durationS: '' },
     bike: { pace: '', durationH: '', durationM: '', durationS: '' },
-    run:  { pace: '', durationH: '', durationM: '', durationS: '' },
+    run:  { paceM: '', paceS: '', durationH: '', durationM: '', durationS: '' },
   },
-  t1: '3',
+  t1: '6',
   t2: '3',
 };
 
@@ -499,44 +471,28 @@ function formatShort(totalSeconds) {
   return `${m}:${String(s).padStart(2,'0')}`;
 }
 
-function parsePaceToSeconds(discipline, paceStr) {
-  if (!paceStr || paceStr.trim() === '') return null;
+function parsePaceToSeconds(discipline, vals) {
   const dist = DISTANCES[state.distance];
 
   if (discipline === 'swim') {
-    // min/100m -> parse as m:ss or just number (minutes)
-    const parts = paceStr.replace(',', '.').split(':');
-    let secsPerHundred;
-    if (parts.length === 2) {
-      secsPerHundred = parseFloat(parts[0]) * 60 + parseFloat(parts[1]);
-    } else {
-      const val = parseFloat(parts[0]);
-      if (isNaN(val)) return null;
-      secsPerHundred = val * 60;
-    }
-    if (isNaN(secsPerHundred) || secsPerHundred <= 0) return null;
+    const m = parseFloat(vals.paceM) || 0;
+    const s = parseFloat(vals.paceS) || 0;
+    const secsPerHundred = m * 60 + s;
+    if (secsPerHundred <= 0) return null;
     return (dist.swim / 100) * secsPerHundred;
   }
 
   if (discipline === 'bike') {
-    // km/h
-    const kmh = parseFloat(paceStr.replace(',', '.'));
+    const kmh = parseFloat((vals.pace || '').replace(',', '.'));
     if (isNaN(kmh) || kmh <= 0) return null;
     return (dist.bike / 1000) / kmh * 3600;
   }
 
   if (discipline === 'run') {
-    // min/km -> parse as m:ss or just number (minutes)
-    const parts = paceStr.replace(',', '.').split(':');
-    let secsPerKm;
-    if (parts.length === 2) {
-      secsPerKm = parseFloat(parts[0]) * 60 + parseFloat(parts[1]);
-    } else {
-      const val = parseFloat(parts[0]);
-      if (isNaN(val)) return null;
-      secsPerKm = val * 60;
-    }
-    if (isNaN(secsPerKm) || secsPerKm <= 0) return null;
+    const m = parseFloat(vals.paceM) || 0;
+    const s = parseFloat(vals.paceS) || 0;
+    const secsPerKm = m * 60 + s;
+    if (secsPerKm <= 0) return null;
     return (dist.run / 1000) * secsPerKm;
   }
 
@@ -555,7 +511,7 @@ function getDisciplineSeconds(key) {
   const mode = state.modes[key];
   const vals = state.values[key];
   if (mode === 'pace') {
-    return parsePaceToSeconds(key, vals.pace);
+    return parsePaceToSeconds(key, vals);
   } else {
     return parseDurationToSeconds(vals);
   }
@@ -637,17 +593,32 @@ function renderCards() {
 
     let inputHTML;
     if (mode === 'pace') {
-      const placeholder = disc.key === 'swim' ? '1:45' : disc.key === 'bike' ? '35' : '5:30';
-      inputHTML = `
-        <div class="input-row">
-          <div class="input-group">
-            <input class="input-field" type="text" inputmode="decimal"
-              placeholder="${placeholder}"
-              value="${vals.pace}"
-              data-key="${disc.key}" data-field="pace">
+      if (disc.key === 'bike') {
+        inputHTML = `
+          <div class="input-row">
+            <div class="input-group">
+              <input class="input-field" type="number" inputmode="decimal"
+                placeholder="35"
+                value="${vals.pace}"
+                data-key="${disc.key}" data-field="pace">
+              <span class="input-unit">${disc.paceUnit}</span>
+            </div>
+          </div>`;
+      } else {
+        const placeholderM = disc.key === 'swim' ? '1' : '5';
+        const placeholderS = disc.key === 'swim' ? '45' : '30';
+        inputHTML = `
+          <div class="input-row">
+            <div class="duration-inputs">
+              <input class="input-field" type="number" inputmode="numeric" placeholder="${placeholderM}"
+                value="${vals.paceM}" data-key="${disc.key}" data-field="paceM" min="0" max="59">
+              <span class="duration-sep">:</span>
+              <input class="input-field" type="number" inputmode="numeric" placeholder="${placeholderS}"
+                value="${vals.paceS}" data-key="${disc.key}" data-field="paceS" min="0" max="59">
+            </div>
             <span class="input-unit">${disc.paceUnit}</span>
-          </div>
-        </div>`;
+          </div>`;
+      }
     } else {
       inputHTML = `
         <div class="input-row">
