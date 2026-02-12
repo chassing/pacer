@@ -58,22 +58,6 @@
     padding: 16px;
   }
 
-  /* Header */
-  .header {
-    text-align: center;
-    padding: 20px 0 12px;
-  }
-
-  .header h1 {
-    font-size: 28px;
-    font-weight: 700;
-    letter-spacing: -0.5px;
-    background: linear-gradient(135deg, var(--swim), var(--bike), var(--run));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
   /* Distance Tabs */
   .distance-tabs {
     display: flex;
@@ -330,8 +314,8 @@
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
     border-top: 1px solid var(--card-border);
-    padding: 16px 20px;
-    padding-bottom: max(16px, env(safe-area-inset-bottom));
+    padding: 12px 20px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
     transition: box-shadow 0.5s ease;
   }
 
@@ -370,6 +354,26 @@
     gap: 4px;
   }
 
+  .reset-btn {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 16px;
+    opacity: 0.3;
+    cursor: pointer;
+    padding: 8px;
+    line-height: 1;
+    z-index: 11;
+  }
+
+  .reset-btn svg {
+    pointer-events: none;
+  }
+
   .bd-dot {
     width: 6px;
     height: 6px;
@@ -397,16 +401,13 @@
 <div class="bg-gradient"></div>
 
 <div class="container">
-  <div class="header">
-    <h1>PACER</h1>
-  </div>
-
   <div class="distance-tabs" id="distanceTabs"></div>
 
   <div id="cards"></div>
 </div>
 
 <div class="total-bar" id="totalBar">
+  <button class="reset-btn" onclick="resetState()"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 1 9 9"/><polyline points="1 7 3 12 8 10"/></svg></button>
   <div class="total-label">Gesamtzeit</div>
   <div class="total-time" id="totalTime">--:--:--</div>
   <div class="total-breakdown" id="totalBreakdown"></div>
@@ -754,6 +755,25 @@ function updateTotal() {
   // Animate the total time
   totalEl.style.transform = 'scale(1.03)';
   setTimeout(() => { totalEl.style.transform = 'scale(1)'; }, 200);
+}
+
+function resetState() {
+  if (!confirm('Eingaben zuruecksetzen?')) return;
+  state = {
+    distance: 'olympic',
+    modes: { swim: 'duration', bike: 'duration', run: 'duration' },
+    values: {
+      swim: { paceM: '', paceS: '', durationH: '', durationM: '', durationS: '' },
+      bike: { pace: '', durationH: '', durationM: '', durationS: '' },
+      run:  { paceM: '', paceS: '', durationH: '', durationM: '', durationS: '' },
+    },
+    t1: '6',
+    t2: '3',
+  };
+  saveState();
+  renderDistanceTabs();
+  renderCards();
+  updateTotal();
 }
 
 // Init
