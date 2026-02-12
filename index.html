@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pacer">
+<meta name="theme-color" content="#0a0a1a">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Pacer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap');
+
+  :root {
+    --swim: #3b82f6;
+    --swim-glow: rgba(59, 130, 246, 0.4);
+    --bike: #f59e0b;
+    --bike-glow: rgba(245, 158, 11, 0.4);
+    --run: #22c55e;
+    --run-glow: rgba(34, 197, 94, 0.4);
+    --bg: #0a0a1a;
+    --card-bg: rgba(255, 255, 255, 0.06);
+    --card-border: rgba(255, 255, 255, 0.1);
+    --text: #f0f0f0;
+    --text-dim: rgba(255, 255, 255, 0.5);
+    --transition-bg: rgba(255, 255, 255, 0.03);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100dvh;
+    overflow-x: hidden;
+    padding-bottom: 140px;
+  }
+
+  /* Animated gradient background */
+  .bg-gradient {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 0;
+    background:
+      radial-gradient(ellipse at 20% 20%, rgba(59, 130, 246, 0.12) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 50%, rgba(245, 158, 11, 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 90%, rgba(34, 197, 94, 0.10) 0%, transparent 50%);
+    animation: gradientShift 12s ease-in-out infinite alternate;
+  }
+
+  @keyframes gradientShift {
+    0% {
+      background:
+        radial-gradient(ellipse at 20% 20%, rgba(59, 130, 246, 0.12) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 50%, rgba(245, 158, 11, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 90%, rgba(34, 197, 94, 0.10) 0%, transparent 50%);
+    }
+    33% {
+      background:
+        radial-gradient(ellipse at 40% 40%, rgba(59, 130, 246, 0.10) 0%, transparent 50%),
+        radial-gradient(ellipse at 60% 20%, rgba(245, 158, 11, 0.12) 0%, transparent 50%),
+        radial-gradient(ellipse at 30% 80%, rgba(34, 197, 94, 0.08) 0%, transparent 50%);
+    }
+    66% {
+      background:
+        radial-gradient(ellipse at 60% 30%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 30% 60%, rgba(245, 158, 11, 0.10) 0%, transparent 50%),
+        radial-gradient(ellipse at 70% 80%, rgba(34, 197, 94, 0.12) 0%, transparent 50%);
+    }
+    100% {
+      background:
+        radial-gradient(ellipse at 50% 50%, rgba(59, 130, 246, 0.10) 0%, transparent 50%),
+        radial-gradient(ellipse at 20% 70%, rgba(245, 158, 11, 0.10) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 30%, rgba(34, 197, 94, 0.10) 0%, transparent 50%);
+    }
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 16px;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    padding: 20px 0 12px;
+  }
+
+  .header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--swim), var(--bike), var(--run));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Distance Tabs */
+  .distance-tabs {
+    display: flex;
+    gap: 6px;
+    padding: 4px;
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 14px;
+    border: 1px solid var(--card-border);
+    margin-bottom: 16px;
+  }
+
+  .distance-tab {
+    flex: 1;
+    padding: 10px 4px;
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    line-height: 1.2;
+  }
+
+  .distance-tab.active {
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .distance-tab .tab-label { display: block; font-size: 12px; }
+  .distance-tab .tab-detail { display: block; font-size: 9px; margin-top: 2px; opacity: 0.6; }
+
+  /* Discipline Cards */
+  .card {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 10px;
+    transition: all 0.4s ease;
+    animation: cardIn 0.4s ease backwards;
+  }
+
+  .card:nth-child(1) { animation-delay: 0.05s; }
+  .card:nth-child(2) { animation-delay: 0.1s; }
+  .card:nth-child(3) { animation-delay: 0.15s; }
+
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card.swim { border-left: 3px solid var(--swim); }
+  .card.bike { border-left: 3px solid var(--bike); }
+  .card.run  { border-left: 3px solid var(--run); }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .card-title {
+    font-size: 15px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card.swim .card-title { color: var(--swim); }
+  .card.bike .card-title { color: var(--bike); }
+  .card.run  .card-title { color: var(--run); }
+
+  .discipline-distance {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-weight: 400;
+  }
+
+  /* Mode Toggle */
+  .mode-toggle {
+    display: flex;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .mode-btn {
+    padding: 5px 10px;
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.25s ease;
+  }
+
+  .mode-btn.active {
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--text);
+  }
+
+  /* Input Row */
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .input-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+  }
+
+  .input-field {
+    width: 100%;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 18px;
+    font-weight: 600;
+    text-align: center;
+    outline: none;
+    transition: all 0.25s ease;
+  }
+
+  .input-field:focus {
+    border-color: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.09);
+  }
+
+  .card.swim .input-field:focus { border-color: var(--swim); box-shadow: 0 0 12px var(--swim-glow); }
+  .card.bike .input-field:focus { border-color: var(--bike); box-shadow: 0 0 12px var(--bike-glow); }
+  .card.run  .input-field:focus { border-color: var(--run);  box-shadow: 0 0 12px var(--run-glow); }
+
+  .input-field::placeholder { color: rgba(255,255,255,0.2); }
+
+  .input-unit {
+    font-size: 11px;
+    color: var(--text-dim);
+    white-space: nowrap;
+    min-width: 45px;
+  }
+
+  /* Duration inputs */
+  .duration-inputs {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+  }
+
+  .duration-inputs .input-field {
+    width: 60px;
+    flex: 1;
+  }
+
+  .duration-sep {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-dim);
+  }
+
+  /* Computed result line */
+  .computed-result {
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--text-dim);
+    text-align: right;
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 20px;
+    transition: all 0.3s ease;
+  }
+
+  /* Transition zones */
+  .transition-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: var(--transition-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    margin-bottom: 10px;
+  }
+
+  .transition-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-dim);
+    min-width: 30px;
+  }
+
+  .transition-input {
+    width: 50px;
+    padding: 6px 8px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    font-weight: 600;
+    text-align: center;
+    outline: none;
+    transition: all 0.25s ease;
+  }
+
+  .transition-input:focus {
+    border-color: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.09);
+  }
+
+  .transition-unit {
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .transition-desc {
+    font-size: 10px;
+    color: rgba(255,255,255,0.3);
+    margin-left: auto;
+  }
+
+  /* Total time bar */
+  .total-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    background: rgba(10, 10, 26, 0.85);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-top: 1px solid var(--card-border);
+    padding: 16px 20px;
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+    transition: box-shadow 0.5s ease;
+  }
+
+  .total-bar .total-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+
+  .total-bar .total-time {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 36px;
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: -1px;
+    transition: all 0.4s ease;
+  }
+
+  .total-bar .total-breakdown {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 6px;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .total-breakdown .bd-item {
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .bd-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .bd-dot.swim { background: var(--swim); }
+  .bd-dot.bike { background: var(--bike); }
+  .bd-dot.run  { background: var(--run); }
+
+  /* Glow effect on total bar */
+  .total-bar.glow-swim { box-shadow: 0 -4px 30px var(--swim-glow); }
+  .total-bar.glow-bike { box-shadow: 0 -4px 30px var(--bike-glow); }
+  .total-bar.glow-run  { box-shadow: 0 -4px 30px var(--run-glow); }
+
+  /* Number input arrows removal */
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; }
+</style>
+</head>
+<body>
+
+<div class="bg-gradient"></div>
+
+<div class="container">
+  <div class="header">
+    <h1>PACER</h1>
+  </div>
+
+  <div class="distance-tabs" id="distanceTabs"></div>
+
+  <div id="cards"></div>
+</div>
+
+<div class="total-bar" id="totalBar">
+  <div class="total-label">Gesamtzeit</div>
+  <div class="total-time" id="totalTime">--:--:--</div>
+  <div class="total-breakdown" id="totalBreakdown"></div>
+</div>
+
+<script>
+const DISTANCES = {
+  sprint:    { label: 'Sprint',    detail: '0.75/20/5',       swim: 750,   bike: 20000,  run: 5000 },
+  olympic:   { label: 'Olympisch', detail: '1.5/40/10',       swim: 1500,  bike: 40000,  run: 10000 },
+  half:      { label: 'Half',      detail: '1.9/90/21.1',     swim: 1900,  bike: 90000,  run: 21097.5 },
+  full:      { label: 'Ironman',   detail: '3.86/180.2/42.2', swim: 3862,  bike: 180200, run: 42195 },
+};
+
+const DISCIPLINES = [
+  { key: 'swim', label: 'Swim', paceUnit: 'min/100m', paceLabel: 'Pace' },
+  { key: 'bike', label: 'Bike', paceUnit: 'km/h',     paceLabel: 'Speed' },
+  { key: 'run',  label: 'Run',  paceUnit: 'min/km',   paceLabel: 'Pace' },
+];
+
+let state = {
+  distance: 'olympic',
+  modes: { swim: 'pace', bike: 'pace', run: 'pace' },
+  values: {
+    swim: { pace: '', durationH: '', durationM: '', durationS: '' },
+    bike: { pace: '', durationH: '', durationM: '', durationS: '' },
+    run:  { pace: '', durationH: '', durationM: '', durationS: '' },
+  },
+  t1: '3',
+  t2: '3',
+};
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem('pacer_state');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      state = { ...state, ...parsed };
+    }
+  } catch(e) {}
+}
+
+function saveState() {
+  try {
+    localStorage.setItem('pacer_state', JSON.stringify(state));
+  } catch(e) {}
+}
+
+function formatDuration(totalSeconds) {
+  if (!totalSeconds || totalSeconds <= 0 || !isFinite(totalSeconds)) return '--:--:--';
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = Math.round(totalSeconds % 60);
+  return `${h}:${String(m).padStart(2,'0')}:${String(s === 60 ? 0 : s).padStart(2,'0')}`;
+}
+
+function formatShort(totalSeconds) {
+  if (!totalSeconds || totalSeconds <= 0 || !isFinite(totalSeconds)) return '--:--';
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = Math.round(totalSeconds % 60);
+  if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  return `${m}:${String(s).padStart(2,'0')}`;
+}
+
+function parsePaceToSeconds(discipline, paceStr) {
+  if (!paceStr || paceStr.trim() === '') return null;
+  const dist = DISTANCES[state.distance];
+
+  if (discipline === 'swim') {
+    // min/100m -> parse as m:ss or just number (minutes)
+    const parts = paceStr.replace(',', '.').split(':');
+    let secsPerHundred;
+    if (parts.length === 2) {
+      secsPerHundred = parseFloat(parts[0]) * 60 + parseFloat(parts[1]);
+    } else {
+      const val = parseFloat(parts[0]);
+      if (isNaN(val)) return null;
+      secsPerHundred = val * 60;
+    }
+    if (isNaN(secsPerHundred) || secsPerHundred <= 0) return null;
+    return (dist.swim / 100) * secsPerHundred;
+  }
+
+  if (discipline === 'bike') {
+    // km/h
+    const kmh = parseFloat(paceStr.replace(',', '.'));
+    if (isNaN(kmh) || kmh <= 0) return null;
+    return (dist.bike / 1000) / kmh * 3600;
+  }
+
+  if (discipline === 'run') {
+    // min/km -> parse as m:ss or just number (minutes)
+    const parts = paceStr.replace(',', '.').split(':');
+    let secsPerKm;
+    if (parts.length === 2) {
+      secsPerKm = parseFloat(parts[0]) * 60 + parseFloat(parts[1]);
+    } else {
+      const val = parseFloat(parts[0]);
+      if (isNaN(val)) return null;
+      secsPerKm = val * 60;
+    }
+    if (isNaN(secsPerKm) || secsPerKm <= 0) return null;
+    return (dist.run / 1000) * secsPerKm;
+  }
+
+  return null;
+}
+
+function parseDurationToSeconds(vals) {
+  const h = parseFloat(vals.durationH) || 0;
+  const m = parseFloat(vals.durationM) || 0;
+  const s = parseFloat(vals.durationS) || 0;
+  const total = h * 3600 + m * 60 + s;
+  return total > 0 ? total : null;
+}
+
+function getDisciplineSeconds(key) {
+  const mode = state.modes[key];
+  const vals = state.values[key];
+  if (mode === 'pace') {
+    return parsePaceToSeconds(key, vals.pace);
+  } else {
+    return parseDurationToSeconds(vals);
+  }
+}
+
+function secondsToPace(discipline, totalSeconds) {
+  if (!totalSeconds || totalSeconds <= 0) return '';
+  const dist = DISTANCES[state.distance];
+
+  if (discipline === 'swim') {
+    const secsPerHundred = totalSeconds / (dist.swim / 100);
+    const m = Math.floor(secsPerHundred / 60);
+    const s = Math.round(secsPerHundred % 60);
+    return `${m}:${String(s).padStart(2, '0')} min/100m`;
+  }
+  if (discipline === 'bike') {
+    const kmh = (dist.bike / 1000) / (totalSeconds / 3600);
+    return `${kmh.toFixed(1)} km/h`;
+  }
+  if (discipline === 'run') {
+    const secsPerKm = totalSeconds / (dist.run / 1000);
+    const m = Math.floor(secsPerKm / 60);
+    const s = Math.round(secsPerKm % 60);
+    return `${m}:${String(s).padStart(2, '0')} min/km`;
+  }
+  return '';
+}
+
+function secondsToDuration(totalSeconds) {
+  if (!totalSeconds || totalSeconds <= 0) return '';
+  return formatShort(totalSeconds);
+}
+
+function getComputedText(key) {
+  const mode = state.modes[key];
+  const secs = getDisciplineSeconds(key);
+  if (!secs) return '';
+  if (mode === 'pace') {
+    return '= ' + secondsToDuration(secs);
+  } else {
+    return '= ' + secondsToPace(key, secs);
+  }
+}
+
+function renderDistanceTabs() {
+  const container = document.getElementById('distanceTabs');
+  container.innerHTML = '';
+  for (const [key, d] of Object.entries(DISTANCES)) {
+    const btn = document.createElement('button');
+    btn.className = 'distance-tab' + (state.distance === key ? ' active' : '');
+    btn.innerHTML = `<span class="tab-label">${d.label}</span><span class="tab-detail">${d.detail}</span>`;
+    btn.addEventListener('click', () => {
+      state.distance = key;
+      saveState();
+      renderDistanceTabs();
+      renderCards();
+      updateTotal();
+    });
+    container.appendChild(btn);
+  }
+}
+
+function renderCards() {
+  const container = document.getElementById('cards');
+  container.innerHTML = '';
+
+  DISCIPLINES.forEach((disc, idx) => {
+    const dist = DISTANCES[state.distance];
+    const distKm = disc.key === 'swim'
+      ? (dist.swim >= 1000 ? (dist.swim/1000).toFixed(2) + ' km' : dist.swim + ' m')
+      : (dist[disc.key] / 1000).toFixed(1) + ' km';
+
+    const card = document.createElement('div');
+    card.className = `card ${disc.key}`;
+    card.style.animationDelay = `${idx * 0.05}s`;
+
+    const mode = state.modes[disc.key];
+    const vals = state.values[disc.key];
+
+    let inputHTML;
+    if (mode === 'pace') {
+      const placeholder = disc.key === 'swim' ? '1:45' : disc.key === 'bike' ? '35' : '5:30';
+      inputHTML = `
+        <div class="input-row">
+          <div class="input-group">
+            <input class="input-field" type="text" inputmode="decimal"
+              placeholder="${placeholder}"
+              value="${vals.pace}"
+              data-key="${disc.key}" data-field="pace">
+            <span class="input-unit">${disc.paceUnit}</span>
+          </div>
+        </div>`;
+    } else {
+      inputHTML = `
+        <div class="input-row">
+          <div class="duration-inputs">
+            <input class="input-field" type="number" inputmode="numeric" placeholder="0"
+              value="${vals.durationH}" data-key="${disc.key}" data-field="durationH" min="0" max="23">
+            <span class="duration-sep">:</span>
+            <input class="input-field" type="number" inputmode="numeric" placeholder="00"
+              value="${vals.durationM}" data-key="${disc.key}" data-field="durationM" min="0" max="59">
+            <span class="duration-sep">:</span>
+            <input class="input-field" type="number" inputmode="numeric" placeholder="00"
+              value="${vals.durationS}" data-key="${disc.key}" data-field="durationS" min="0" max="59">
+          </div>
+          <span class="input-unit">h:m:s</span>
+        </div>`;
+    }
+
+    card.innerHTML = `
+      <div class="card-header">
+        <div class="card-title">
+          ${disc.label} <span class="discipline-distance">${distKm}</span>
+        </div>
+        <div class="mode-toggle">
+          <button class="mode-btn ${mode === 'pace' ? 'active' : ''}" data-key="${disc.key}" data-mode="pace">${disc.paceLabel}</button>
+          <button class="mode-btn ${mode === 'duration' ? 'active' : ''}" data-key="${disc.key}" data-mode="duration">Dauer</button>
+        </div>
+      </div>
+      ${inputHTML}
+      <div class="computed-result" id="computed-${disc.key}">${getComputedText(disc.key)}</div>
+    `;
+
+    container.appendChild(card);
+
+    // Insert transition rows after swim and bike
+    if (idx === 0) {
+      container.appendChild(createTransitionRow('t1', 'T1', 'Swim > Bike'));
+    }
+    if (idx === 1) {
+      container.appendChild(createTransitionRow('t2', 'T2', 'Bike > Run'));
+    }
+  });
+
+  // Attach events
+  container.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const key = e.target.dataset.key;
+      const mode = e.target.dataset.mode;
+      state.modes[key] = mode;
+      saveState();
+      renderCards();
+      updateTotal();
+    });
+  });
+
+  container.querySelectorAll('.input-field').forEach(input => {
+    input.addEventListener('input', (e) => {
+      const key = e.target.dataset.key;
+      const field = e.target.dataset.field;
+      state.values[key][field] = e.target.value;
+      saveState();
+      updateComputed(key);
+      updateTotal();
+    });
+  });
+
+  container.querySelectorAll('.transition-input').forEach(input => {
+    input.addEventListener('input', (e) => {
+      const key = e.target.dataset.tkey;
+      state[key] = e.target.value;
+      saveState();
+      updateTotal();
+    });
+  });
+}
+
+function createTransitionRow(key, label, desc) {
+  const row = document.createElement('div');
+  row.className = 'transition-row';
+  row.innerHTML = `
+    <span class="transition-label">${label}</span>
+    <input class="transition-input" type="number" inputmode="numeric"
+      value="${state[key]}" data-tkey="${key}" min="0" max="30" placeholder="3">
+    <span class="transition-unit">min</span>
+    <span class="transition-desc">${desc}</span>
+  `;
+  return row;
+}
+
+function updateComputed(key) {
+  const el = document.getElementById(`computed-${key}`);
+  if (el) {
+    el.textContent = getComputedText(key);
+  }
+}
+
+function updateTotal() {
+  const swimSec = getDisciplineSeconds('swim');
+  const bikeSec = getDisciplineSeconds('bike');
+  const runSec = getDisciplineSeconds('run');
+  const t1Sec = (parseFloat(state.t1) || 0) * 60;
+  const t2Sec = (parseFloat(state.t2) || 0) * 60;
+
+  const parts = [swimSec, t1Sec, bikeSec, t2Sec, runSec];
+  const allValid = swimSec && bikeSec && runSec;
+  const total = parts.reduce((a, b) => a + (b || 0), 0);
+
+  const totalEl = document.getElementById('totalTime');
+  const barEl = document.getElementById('totalBar');
+
+  if (allValid && total > 0) {
+    totalEl.textContent = formatDuration(total);
+
+    // Determine dominant discipline for glow
+    const max = Math.max(swimSec, bikeSec, runSec);
+    barEl.className = 'total-bar';
+    if (max === bikeSec) barEl.classList.add('glow-bike');
+    else if (max === runSec) barEl.classList.add('glow-run');
+    else barEl.classList.add('glow-swim');
+
+    // Breakdown
+    const bd = document.getElementById('totalBreakdown');
+    bd.innerHTML = `
+      <span class="bd-item"><span class="bd-dot swim"></span>${formatShort(swimSec)}</span>
+      <span class="bd-item"><span class="bd-dot bike"></span>${formatShort(bikeSec)}</span>
+      <span class="bd-item"><span class="bd-dot run"></span>${formatShort(runSec)}</span>
+    `;
+  } else {
+    totalEl.textContent = '--:--:--';
+    barEl.className = 'total-bar';
+    document.getElementById('totalBreakdown').innerHTML = '';
+  }
+
+  // Animate the total time
+  totalEl.style.transform = 'scale(1.03)';
+  setTimeout(() => { totalEl.style.transform = 'scale(1)'; }, 200);
+}
+
+// Init
+loadState();
+renderDistanceTabs();
+renderCards();
+updateTotal();
+
+// Register service worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
